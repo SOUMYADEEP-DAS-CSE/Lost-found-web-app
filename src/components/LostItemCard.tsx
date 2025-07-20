@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Trash2, PlusCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -12,6 +12,7 @@ type LostItem = {
   "your contact": number;
   "lost date": string;
   inStock: boolean;
+    type: 'lost' | 'found';
 };
 
 export default function LostAndFoundPage() {
@@ -25,7 +26,22 @@ export default function LostAndFoundPage() {
   const [lostDate, setLostDate] = useState('');
   const [inStock, setInStock] = useState(true);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Load existing items from MongoDB
+  useEffect(() => {
+    async function fetchItems() {
+      try {
+        const res = await fetch('/api/items');
+        const data = await res.json();
+        setItems(data);
+      } catch (err) {
+        console.error('Error fetching items:', err);
+      }
+    }
+
+    fetchItems();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!yourName || !itemName || !description || !contact || !lostDate) {
@@ -41,20 +57,37 @@ export default function LostAndFoundPage() {
       "your contact": Number(contact),
       "lost date": lostDate,
       inStock,
+      type: 'found',
+          
     };
 
-    setItems([...items, newItem]);
+    try {
+      const res = await fetch('/api/items', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newItem),
+      });
 
-    setShowForm(false);
-    setYourName('');
-    setItemName('');
-    setDescription('');
-    setContact('');
-    setLostDate('');
-    setInStock(true);
+      if (!res.ok) throw new Error('Failed to store item');
+
+      setItems([...items, newItem]); // Update UI
+      setShowForm(false);
+      setYourName('');
+      setItemName('');
+      setDescription('');
+      setContact('');
+      setLostDate('');
+      setInStock(true);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to submit item');
+    }
   };
 
   const handleRemove = (id: number) => {
+    // Note: this only removes from UI, not MongoDB yet
     setItems(items.filter((item) => item.id !== id));
   };
 
@@ -91,7 +124,7 @@ export default function LostAndFoundPage() {
             className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-2xl max-w-2xl mx-auto w-full border dark:border-gray-700"
           >
             <h2 className="text-2xl font-semibold mb-6">📝 Report a Found Item</h2>
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit}  className="space-y-5">
               <div>
                 <label className="block mb-1">Your Name</label>
                 <input
@@ -144,7 +177,6 @@ export default function LostAndFoundPage() {
                   checked={inStock}
                   onChange={() => setInStock(!inStock)}
                 />
-
               </div>
               <div className="flex gap-4 justify-end">
                 <button type="submit" className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow">
@@ -173,6 +205,9 @@ export default function LostAndFoundPage() {
               className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border dark:border-gray-700 relative group"
             >
               <h2 className="text-xl font-bold mb-2">{item["lost item name"]}</h2>
+              <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                📌 Status: {item.type === 'found' ? 'Found' : 'Lost'}
+              </p>
               <p className="text-sm text-gray-500 dark:text-gray-300">🧍 My Name: {item["your name"]}</p>
               <p className="text-sm text-gray-500 dark:text-gray-300">📝 Description: {item.description}</p>
               <p className="text-sm text-gray-500 dark:text-gray-300">📅 Found Date: {item["lost date"]}</p>
@@ -190,4 +225,4 @@ export default function LostAndFoundPage() {
       </div>
     </div>
   );
-}
+}  
