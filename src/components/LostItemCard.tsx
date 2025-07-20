@@ -5,6 +5,7 @@ import { Trash2, PlusCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 type LostItem = {
+  _id?: string;
   id: number;
   "your name": string;
   "lost item name": string;
@@ -12,7 +13,7 @@ type LostItem = {
   "your contact": number;
   "lost date": string;
   inStock: boolean;
-    type: 'lost' | 'found';
+  type: 'lost' | 'found';
 };
 
 export default function LostAndFoundPage() {
@@ -26,7 +27,6 @@ export default function LostAndFoundPage() {
   const [lostDate, setLostDate] = useState('');
   const [inStock, setInStock] = useState(true);
 
-  // Load existing items from MongoDB
   useEffect(() => {
     async function fetchItems() {
       try {
@@ -49,7 +49,7 @@ export default function LostAndFoundPage() {
       return;
     }
 
-    const newItem: LostItem = {
+    const newItem = {
       id: Date.now(),
       "your name": yourName,
       "lost item name": itemName,
@@ -58,7 +58,6 @@ export default function LostAndFoundPage() {
       "lost date": lostDate,
       inStock,
       type: 'found',
-          
     };
 
     try {
@@ -72,7 +71,10 @@ export default function LostAndFoundPage() {
 
       if (!res.ok) throw new Error('Failed to store item');
 
-      setItems([...items, newItem]); // Update UI
+      const savedItem = await res.json(); // This includes _id from MongoDB
+      setItems([...items, savedItem]);
+
+      // Reset form
       setShowForm(false);
       setYourName('');
       setItemName('');
@@ -86,9 +88,19 @@ export default function LostAndFoundPage() {
     }
   };
 
-  const handleRemove = (id: number) => {
-    // Note: this only removes from UI, not MongoDB yet
-    setItems(items.filter((item) => item.id !== id));
+  const handleDelete = async (id?: string) => {
+    if (!id) return;
+    try {
+      const res = await fetch(`/api/items/${id}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error('Delete failed');
+
+      setItems((prev) => prev.filter((item) => item._id !== id));
+    } catch (err) {
+      console.error(err);
+      alert('Failed to delete item');
+    }
   };
 
   return (
@@ -124,71 +136,34 @@ export default function LostAndFoundPage() {
             className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-2xl max-w-2xl mx-auto w-full border dark:border-gray-700"
           >
             <h2 className="text-2xl font-semibold mb-6">📝 Report a Found Item</h2>
-            <form onSubmit={handleSubmit}  className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-5">
               <div>
                 <label className="block mb-1">Your Name</label>
-                <input
-                  type="text"
-                  value={yourName}
-                  onChange={(e) => setYourName(e.target.value)}
-                  className="w-full bg-transparent border px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                <input type="text" value={yourName} onChange={(e) => setYourName(e.target.value)} className="w-full bg-transparent border px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
                 <label className="block mb-1">Item Name</label>
-                <input
-                  type="text"
-                  value={itemName}
-                  onChange={(e) => setItemName(e.target.value)}
-                  className="w-full bg-transparent border px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                <input type="text" value={itemName} onChange={(e) => setItemName(e.target.value)} className="w-full bg-transparent border px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
                 <label className="block mb-1">Description</label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="w-full bg-transparent border px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="w-full bg-transparent border px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
                 <label className="block mb-1">Your Contact</label>
-                <input
-                  type="number"
-                  value={contact}
-                  onChange={(e) => setContact(e.target.value)}
-                  className="w-full bg-transparent border px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                <input type="number" value={contact} onChange={(e) => setContact(e.target.value)} className="w-full bg-transparent border px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
                 <label className="block mb-1">Found Date</label>
-                <input
-                  type="date"
-                  value={lostDate}
-                  onChange={(e) => setLostDate(e.target.value)}
-                  className="w-full bg-transparent border px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                <input type="date" value={lostDate} onChange={(e) => setLostDate(e.target.value)} className="w-full bg-transparent border px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div className="flex items-center gap-2">
                 <label htmlFor="inStock">Is this item still available?</label>
-                <input
-                  id="inStock"
-                  type="checkbox"
-                  checked={inStock}
-                  onChange={() => setInStock(!inStock)}
-                />
+                <input id="inStock" type="checkbox" checked={inStock} onChange={() => setInStock(!inStock)} />
               </div>
               <div className="flex gap-4 justify-end">
-                <button type="submit" className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow">
-                  Submit
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowForm(false)}
-                  className="px-5 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md shadow"
-                >
-                  Cancel
-                </button>
+                <button type="submit" className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow">Submit</button>
+                <button type="button" onClick={() => setShowForm(false)} className="px-5 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md shadow">Cancel</button>
               </div>
             </form>
           </motion.div>
@@ -197,7 +172,7 @@ export default function LostAndFoundPage() {
         <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {items.map((item) => (
             <motion.div
-              key={item.id}
+              key={item._id ?? item.id}
               layout
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -214,7 +189,7 @@ export default function LostAndFoundPage() {
               <p className="text-sm text-gray-500 dark:text-gray-300">📞 Contact: {item["your contact"]}</p>
               <p className="text-sm text-gray-500 dark:text-gray-300">✅ Available: {item.inStock ? "Yes" : "No"}</p>
               <button
-                onClick={() => handleRemove(item.id)}
+                onClick={() => handleDelete(item._id)}
                 className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-600"
               >
                 <Trash2 className="w-5 h-5" />
@@ -225,4 +200,4 @@ export default function LostAndFoundPage() {
       </div>
     </div>
   );
-}  
+}

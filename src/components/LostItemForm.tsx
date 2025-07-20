@@ -56,7 +56,7 @@ export default function LostAndFoundPage() {
       "your contact": Number(contact),
       "lost date": lostDate,
       inStock,
-       type: 'lost',
+      type: 'lost',
     };
 
     try {
@@ -70,7 +70,6 @@ export default function LostAndFoundPage() {
       const created = await res.json();
       setItems([...items, created]);
 
-      // Clear form
       setShowForm(false);
       setYourName('');
       setItemName('');
@@ -81,6 +80,20 @@ export default function LostAndFoundPage() {
     } catch (err) {
       console.error(err);
       alert('Failed to submit item');
+    }
+  };
+
+  const handleDelete = async (id?: string) => {
+    if (!id) return;
+    try {
+      const res = await fetch(`/api/items/${id}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error('Delete failed');
+      setItems((prev) => prev.filter((item) => item._id !== id));
+    } catch (err) {
+      console.error(err);
+      alert('Failed to delete item');
     }
   };
 
@@ -118,34 +131,70 @@ export default function LostAndFoundPage() {
           >
             <h2 className="text-2xl font-semibold mb-6">📝 Report a Lost Item</h2>
             <form onSubmit={handleSubmit} className="space-y-5">
-              <div><label className="block mb-1">Your Name</label>
-                <input type="text" value={yourName} onChange={(e) => setYourName(e.target.value)}
-                  className="w-full bg-transparent border px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <div>
+                <label className="block mb-1">Your Name</label>
+                <input
+                  type="text"
+                  value={yourName}
+                  onChange={(e) => setYourName(e.target.value)}
+                  className="w-full bg-transparent border px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
               </div>
-              <div><label className="block mb-1">Lost Item Name</label>
-                <input type="text" value={itemName} onChange={(e) => setItemName(e.target.value)}
-                  className="w-full bg-transparent border px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <div>
+                <label className="block mb-1">Lost Item Name</label>
+                <input
+                  type="text"
+                  value={itemName}
+                  onChange={(e) => setItemName(e.target.value)}
+                  className="w-full bg-transparent border px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
               </div>
-              <div><label className="block mb-1">Description</label>
-                <textarea value={description} onChange={(e) => setDescription(e.target.value)}
-                  className="w-full bg-transparent border px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <div>
+                <label className="block mb-1">Description</label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="w-full bg-transparent border px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
               </div>
-              <div><label className="block mb-1">Your Contact</label>
-                <input type="number" value={contact} onChange={(e) => setContact(e.target.value)}
-                  className="w-full bg-transparent border px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <div>
+                <label className="block mb-1">Your Contact</label>
+                <input
+                  type="number"
+                  value={contact}
+                  onChange={(e) => setContact(e.target.value)}
+                  className="w-full bg-transparent border px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
               </div>
-              <div><label className="block mb-1">Lost Date</label>
-                <input type="date" value={lostDate} onChange={(e) => setLostDate(e.target.value)}
-                  className="w-full bg-transparent border px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <div>
+                <label className="block mb-1">Lost Date</label>
+                <input
+                  type="date"
+                  value={lostDate}
+                  onChange={(e) => setLostDate(e.target.value)}
+                  className="w-full bg-transparent border px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
               </div>
               <div className="flex items-center gap-2">
                 <label htmlFor="inStock">Is this item important?</label>
-                <input id="inStock" type="checkbox" checked={inStock} onChange={() => setInStock(!inStock)} />
+                <input
+                  id="inStock"
+                  type="checkbox"
+                  checked={inStock}
+                  onChange={() => setInStock(!inStock)}
+                />
               </div>
               <div className="flex gap-4 justify-end">
-                <button type="submit" className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow">Submit</button>
-                <button type="button" onClick={() => setShowForm(false)}
-                  className="px-5 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md shadow">Cancel</button>
+                <button type="submit" className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow">
+                  Submit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowForm(false)}
+                  className="px-5 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md shadow"
+                >
+                  Cancel
+                </button>
               </div>
             </form>
           </motion.div>
@@ -154,7 +203,7 @@ export default function LostAndFoundPage() {
         <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {items.map((item) => (
             <motion.div
-              key={item._id}
+              key={item._id ?? `temp-${item.id}`}
               layout
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -163,14 +212,19 @@ export default function LostAndFoundPage() {
             >
               <h2 className="text-xl font-bold mb-2">{item["lost item name"]}</h2>
               <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">
-                  📌 Status: {item.type === 'found' ? 'Found' : 'Lost'}
-                </p>
+                📌 Status: {item.type === 'found' ? 'Found' : 'Lost'}
+              </p>
               <p className="text-sm text-gray-500 dark:text-gray-300">🧍 My Name: {item["your name"]}</p>
               <p className="text-sm text-gray-500 dark:text-gray-300">📝 Description: {item.description}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-300">📅 Lost Date: {item["lost date"]}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-300">
+                📅 {item.type === 'found' ? 'Found' : 'Lost'} Date: {item["lost date"]}
+              </p>
               <p className="text-sm text-gray-500 dark:text-gray-300">📞 Contact: {item["your contact"]}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-300">✅ Important: {item.inStock ? "Yes" : "No"}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-300">
+                ✅ {item.type === 'found' ? 'Available' : 'Important'}: {item.inStock ? 'Yes' : 'No'}
+              </p>
               <button
+                onClick={() => handleDelete(item._id)}
                 className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity text-red-500 hover:text-red-600"
               >
                 <Trash2 className="w-5 h-5" />
@@ -181,4 +235,4 @@ export default function LostAndFoundPage() {
       </div>
     </div>
   );
-}  
+}
