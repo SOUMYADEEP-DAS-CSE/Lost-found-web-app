@@ -114,7 +114,7 @@ export default function LostAndFoundPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="bg-white dark:bg-gray-801 p-8 rounded-2xl shadow-2xl max-w-2xl mx-auto w-full border dark:border-gray-700"
+            className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-2xl max-w-2xl mx-auto w-full border dark:border-gray-700"
           >
             <h2 className="text-2xl font-semibold mb-6">📝 Report a Lost Item</h2>
             <form onSubmit={handleSubmit} className="space-y-5">
